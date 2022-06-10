@@ -7,5 +7,5 @@ services:
     environment:
       - NODE_ENV=production
     volumes:
-      - /home/ubuntu/discord-bot/v13:/home/node/app
+      - /home/ubuntu/discord-bot/MusicBot:/home/node/app
     command: "npm start"
