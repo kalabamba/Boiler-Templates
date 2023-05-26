@@ -1,0 +1,106 @@
+global:
+  checkNewVersion: true
+  sendAnonymousUsage: false  # true by default
+
+# (Optional) Log information
+# ---
+# log:
+#  level: ERROR  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+#   format: common  # common, json, logfmt
+#   filePath: /var/log/traefik/traefik.log
+
+# (Optional) Accesslog
+# ---
+# accesslog:
+  # format: common  # common, json, logfmt
+  # filePath: /var/log/traefik/access.log
+# (Optional) Enable API and Dashboard
+# ---
+
+api:
+ dashboard: true  # true by default
+ insecure: false  # Don't do this in production!
+
+# Entry Points configuration
+# ---
+entryPoints:
+  web:
+    address: ":80"
+    # (Optional) Redirect to HTTPS
+    # ---
+    http:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+
+  websecure:
+    address: ":443"
+
+# Configure your CertificateResolver here...
+# ---
+certificatesResolvers:
+#  leresolver:
+#    acme:
+#      email: abc@gmail.com
+#      storage: ./acme.json
+#      caServer: "https://acme-staging-v02.api.letsencrypt.org/directory"
+#      httpChallenge:
+#        entryPoint: web
+#
+  production:
+    acme:
+      email: abc@gmail.com
+      storage: /etc/traefik/acme.json
+      caServer: "https://acme-v02.api.letsencrypt.org/directory"
+      httpChallenge:
+        entryPoint: web
+
+# (Optional) Overwrite Default Certificates
+#tls:
+#  stores:
+#    default:
+#      defaultCertificate:
+#        certFile: /etc/traefik/certs/cert.pem
+#        keyFile: /etc/traefik/certs/cert-key.pem
+# (Optional) Disable TLS version 1.0 and 1.1
+#   options:
+#     default:
+#       minVersion: VersionTLS12
+
+http:
+  routers:
+    puffer-route:
+      rule: "Host(`panel.your-domain.com`)"
+      service: "puffer"
+      tls:
+        certResolver: "production"
+    vpn-route:
+      rule: "Host(`vpn.your-domain.com`)"
+      entryPoints:
+        - "websecure"
+      service: "vpn"
+      tls:
+        certResolver: "production"
+  services:
+    puffer:
+      loadBalancer:
+        servers:
+        - url: "http://xx.xx.xx.xx:8080"
+    vpn:
+      loadBalancer:
+        serversTransport: insecureTransport
+        servers:
+        - url: "https://xx.xx.xx.xx:9090"
+
+  serversTransports:
+    insecureTransport:
+      insecureSkipVerify: true
+
+providers:
+  docker:
+    exposedByDefault: false  # Default is true
+  file:
+    # watch for dynamic configuration changes
+    directory: /etc/traefik/
+    watch: true
